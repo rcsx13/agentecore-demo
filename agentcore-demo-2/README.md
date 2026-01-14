@@ -1,11 +1,12 @@
-# Amazon Bedrock AgentCore Runtime
+# Amazon Bedrock AgentCore Runtime - Demo 2
 
-Agente desplegable a producción 
-Este ejemplo mínimo no incluye un modelo LLM. Para producción, considera agregar un framework como Strands Agents con BedrockModel (Claude, etc.)
+Agente desplegable a producción con Strands Agents, BedrockModel y herramientas MCP.
 
 ## Características
 
 - ✅ **Amazon Bedrock AgentCore Runtime**: Usa el SDK oficial de AWS
+- ✅ **Strands Agents con BedrockModel**: Integración con Claude 3.7 Sonnet
+- ✅ **Herramientas MCP**: Framework de herramientas Model Context Protocol
 - ✅ **Listo para producción**: Desplegable en AWS
 - ✅ **Patrón estándar**: Sigue el patrón del tutorial oficial
 - ✅ **Entrypoint decorator**: Usa `@app.entrypoint` como requerido
@@ -141,10 +142,10 @@ Esto abrirá un modo interactivo donde puedes escribir múltiples mensajes:
 Testing agent locally. Type 'exit' to quit.
 
 > Hello, how are you?
-Agent received: Hello, how are you?
+[Respuesta del agente]
 
 > What is the weather?
-Weather is sunny
+[El agente usará la herramienta get_weather para responder]
 
 > exit
 ```
@@ -290,16 +291,27 @@ Si el despliegue falla, verifica:
    ./deploy.sh
    ```
 
-## Notas sobre el Modelo LLM
+## Herramientas Disponibles
 
-Este ejemplo mínimo **no incluye un modelo LLM**. El código funciona y es válido para Bedrock AgentCore Runtime, pero usa lógica simple basada en palabras clave.
+Este agente incluye varias herramientas a través del framework MCP (Model Context Protocol):
 
-**Para producción real**, deberías:
-- Usar un framework de agentes como **Strands Agents** con **BedrockModel** (Claude, Llama, etc.)
-- Integrar el modelo LLM en la función `agent_handler` para generar respuestas inteligentes
-- Ver el [tutorial oficial](https://github.com/awslabs/amazon-bedrock-agentcore-samples/blob/main/01-tutorials/01-AgentCore-runtime/01-hosting-agent/01-strands-with-bedrock-model/runtime_with_strands_and_bedrock_models.ipynb) para un ejemplo completo con modelo
+- `get_weather`: Consultar información del clima (ejemplo)
+- `calculate`: Realizar operaciones matemáticas (suma, resta, multiplicación, división)
+- `get_time`: Obtener la hora actual
+- `reverse_string`: Invertir una cadena de texto
 
-El patrón `@app.entrypoint` funciona tanto con lógica simple como con modelos LLM complejos.
+El agente puede usar estas herramientas automáticamente cuando sea necesario para responder a las preguntas del usuario.
+
+## Modelo LLM
+
+Este agente usa **Strands Agents** con **BedrockModel** (Claude 3.7 Sonnet) para generar respuestas inteligentes. El agente puede usar automáticamente las herramientas disponibles cuando sea necesario para responder a las preguntas del usuario.
+
+**Configuración del modelo:**
+- Modelo por defecto: `us.anthropic.claude-3-7-sonnet-20250219-v1:0`
+- Temperature: 0.3
+- Top-p: 0.8
+
+Puedes cambiar el modelo usando la variable de entorno `BEDROCK_MODEL_ID`.
 
 ## Referencias
 
