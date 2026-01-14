@@ -9,11 +9,9 @@
 set -e
 
 # Configuration
-REGION=${AWS_REGION:-us-east-2}
 AGENT_NAME=${AGENT_NAME:-agent_runtime_demo_1}
 
 echo "Desplegando agente: $AGENT_NAME"
-echo "Región: $REGION"
 echo ""
 
 # Check if agentcore CLI is installed
