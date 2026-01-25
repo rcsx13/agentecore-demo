@@ -1,0 +1,10 @@
+{
+  "userPoolId": "us-east-1_Dklrwiv8d",
+  "clientId": "5sbkks0505507jlg917ifl8gsp",
+  "clientSecret": "1684b71he00bd0dkas38kd9qhvj7e3u8a6d0d6fc8hro4up53fj1",
+  "discoveryUrl": "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Dklrwiv8d/.well-known/openid-configuration",
+  "domainPrefix": "us-east-1-dklrwiv8d",
+  "cognitoDomain": "us-east-1-dklrwiv8d.auth.us-east-1.amazoncognito.com",
+  "resourceServerId": "agentcore-gateway-countries-gateway",
+  "scopeString": "agentcore-gateway-countries-gateway/gateway:read agentcore-gateway-countries-gateway/gateway:write"
+}

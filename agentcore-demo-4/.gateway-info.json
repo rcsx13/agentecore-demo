@@ -1,0 +1,7 @@
+{
+  "gatewayId": "countries-gateway-fdvmwzb8ln",
+  "gatewayUrl": "https://countries-gateway-fdvmwzb8ln.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp",
+  "gatewayName": "countries-gateway",
+  "region": "us-east-1",
+  "authorizerType": "CUSTOM_JWT"
+}

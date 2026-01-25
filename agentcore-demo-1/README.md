@@ -1,7 +1,7 @@
 # Amazon Bedrock AgentCore Runtime
 
 Agente desplegable a producción 
-Este ejemplo mínimo no incluye un modelo LLM. Para producción, considera agregar un framework como Strands Agents con BedrockModel (Claude, etc.)
+Este ejemplo mínimo no incluye un modelo LLM. Para producción, considerar agregar un framework como Strands Agents con BedrockModel (Claude, etc.) posteriormente.
 
 ## Características
 

@@ -1,0 +1,83 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Countries GraphQL API",
+    "description": "GraphQL API for country information from https://countries.trevorblades.com",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://countries.trevorblades.com"
+    }
+  ],
+  "paths": {
+    "/graphql": {
+      "post": {
+        "operationId": "executeGraphQLQuery",
+        "summary": "Execute a GraphQL query",
+        "description": "Execute a GraphQL query against the Countries API to retrieve information about countries, continents, and languages",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "query": {
+                    "type": "string",
+                    "description": "The GraphQL query string"
+                  },
+                  "variables": {
+                    "type": "object",
+                    "description": "Optional variables for the GraphQL query"
+                  }
+                },
+                "required": ["query"]
+              },
+              "examples": {
+                "getCountry": {
+                  "value": {
+                    "query": "query GetCountry($code: ID!) { country(code: $code) { code name native capital currency continent { code name } languages { code name } } }",
+                    "variables": {
+                      "code": "US"
+                    }
+                  }
+                },
+                "listCountries": {
+                  "value": {
+                    "query": "query { countries { code name capital currency } }"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "GraphQL response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "description": "The data returned by the GraphQL query"
+                    },
+                    "errors": {
+                      "type": "array",
+                      "description": "Any errors that occurred during query execution",
+                      "items": {
+                        "type": "object"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
