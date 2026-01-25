@@ -45,4 +45,6 @@ flowchart TD
     Client[Cliente] -->|HTTP| LocalRuntime[RuntimeLocal]
     LocalRuntime -->|MCP_Client| Gateway[MCP_Gateway]
     Client -->|AWS_SDK_boto3| AWSAgentCore[AgentCore_AWS]
+    AWSAgentCore -->|MCP_Client| Gateway[MCP_Gateway]
+    Gateway -->|Http client| GraphQL[GQL_SVC]
 ```
