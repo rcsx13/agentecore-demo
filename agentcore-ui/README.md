@@ -28,6 +28,22 @@ npm run dev
 
 Luego abre `http://localhost:3000`.
 
+## Docker
+
+Construir imagen:
+
+```bash
+docker build -t agentcore-ui .
+```
+
+Ejecutar contenedor:
+
+```bash
+docker run --rm -p 3000:3000 \
+  -e AGENTCORE_URL=http://host.docker.internal:9001/invocations \
+  agentcore-ui
+```
+
 ## Cómo funciona
 
 - Envía `POST` con JSON `{"prompt":"..."}`.
