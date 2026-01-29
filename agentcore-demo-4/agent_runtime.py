@@ -18,8 +18,9 @@ import logging
 import json
 import base64
 import time
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Iterator
 from datetime import datetime
+from contextlib import contextmanager
 from bedrock_agentcore.runtime import BedrockAgentCoreApp
 from bedrock_agentcore.services.identity import IdentityClient
 from strands import Agent
@@ -53,9 +54,8 @@ app = BedrockAgentCoreApp()
 
 # Initialize MCP client (will be set up on first use)
 _mcp_client: Optional[MCPClient] = None
-_mcp_context = None  # Context manager for MCP client
-_agent: Optional[Agent] = None
 _boto_session: Optional[boto3.Session] = None
+_bedrock_model: Optional[BedrockModel] = None
 
 
 def get_aws_session() -> boto3.Session:
@@ -250,27 +250,27 @@ def create_gateway_mcp_client() -> MCPClient:
     return _mcp_client
 
 
-def initialize_mcp_tools():
-    """Initialize MCP client and get tools, keeping context open."""
-    global _mcp_client, _mcp_context
-    
+@contextmanager
+def initialize_mcp_tools() -> Iterator[list]:
+    """Initialize MCP client and get tools per invocation."""
+    global _mcp_client
+
     if _mcp_client is None:
         _mcp_client = create_gateway_mcp_client()
-    
-    # Enter context and keep it open
-    if _mcp_context is None:
-        try:
-            mcp_start_time = time.time()
-            logger.info("Entering MCP client context...")
-            _mcp_context = _mcp_client.__enter__()
+
+    try:
+        mcp_start_time = time.time()
+        logger.info("Entering MCP client context (per-invocation)...")
+        with _mcp_client:
             mcp_connection_time = time.time() - mcp_start_time
             _metrics['mcp_connection_time'] = mcp_connection_time
-            logger.info(f"✓ MCP client context entered successfully ({mcp_connection_time:.3f}s)")
-            
+            logger.info(
+                f"✓ MCP client context entered successfully ({mcp_connection_time:.3f}s)"
+            )
+
             logger.info("Listing tools from MCP server...")
             tools = _mcp_client.list_tools_sync()
-            
-            # Log detailed tool information
+
             logger.info("=" * 80)
             logger.info(f"MCP TOOLS DISCOVERED: {len(tools)} tool(s)")
             for i, tool in enumerate(tools, 1):
@@ -279,69 +279,54 @@ def initialize_mcp_tools():
                 logger.info(f"  {i}. {tool_name}")
                 logger.info(f"     Description: {tool_desc[:100]}...")
             logger.info("=" * 80)
-            
-            return tools
-        except Exception as e:
-            logger.error(f"Failed to get tools from MCP: {str(e)}")
-            logger.error(f"Exception type: {type(e).__name__}")
-            import traceback
-            logger.error(traceback.format_exc())
-            raise RuntimeError(f"MCP connection failed - {str(e)}")
-    else:
-        # Context already open, just get tools
-        try:
-            tools = _mcp_client.list_tools_sync()
-            return tools
-        except Exception as e:
-            logger.error(f"Failed to get tools from MCP: {str(e)}")
-            raise RuntimeError(f"MCP connection failed - {str(e)}")
+
+            yield tools
+    except Exception as e:
+        logger.error(f"Failed to get tools from MCP: {str(e)}")
+        logger.error(f"Exception type: {type(e).__name__}")
+        import traceback
+        logger.error(traceback.format_exc())
+        raise RuntimeError(f"MCP connection failed - {str(e)}")
 
 
-def get_or_create_agent() -> Agent:
-    """Get or create the Strands agent with BedrockModel and MCP tools."""
-    global _agent
-    
-    if _agent is None:
-        try:
-            # Get Bedrock model ID from environment or use default
-            model_id = os.getenv(
-                "BEDROCK_MODEL_ID",
-                "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
-            )
-            
-            # Create BedrockModel
-            bedrock_model = BedrockModel(
-                model_id=model_id,
-                temperature=0.3,
-                top_p=0.8
-            )
-            
-            # Initialize MCP and get tools
-            # The MCP context will remain open for tool execution
-            tools = initialize_mcp_tools()
-            
-            # Create agent with model and MCP tools
-            _agent = Agent(model=bedrock_model, tools=tools)
-            
-            logger.info("=" * 80)
-            logger.info("AGENT INITIALIZED")
-            logger.info(f"Model: {model_id}")
-            logger.info(f"Temperature: 0.3")
-            logger.info(f"Top P: 0.8")
-            logger.info(f"MCP Tools: {len(tools)}")
-            for i, tool in enumerate(tools, 1):
-                tool_name = getattr(tool, 'name', 'unknown')
-                logger.info(f"  - {tool_name}")
-            logger.info("=" * 80)
-            
-        except RuntimeError:
-            # Re-raise RuntimeError (MCP errors)
-            raise
-        except Exception as e:
-            logger.error(f"Failed to create agent: {str(e)}")
-            raise RuntimeError(f"Agent creation failed - {str(e)}")
-    
-    return _agent
+def get_or_create_bedrock_model() -> BedrockModel:
+    """Get or create the Bedrock model instance."""
+    global _bedrock_model
+
+    if _bedrock_model is None:
+        model_id = os.getenv(
+            "BEDROCK_MODEL_ID",
+            "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+        )
+        _bedrock_model = BedrockModel(
+            model_id=model_id,
+            temperature=0.3,
+            top_p=0.8
+        )
+        logger.info("=" * 80)
+        logger.info("BEDROCK MODEL INITIALIZED")
+        logger.info(f"Model: {model_id}")
+        logger.info(f"Temperature: 0.3")
+        logger.info(f"Top P: 0.8")
+        logger.info("=" * 80)
+
+    return _bedrock_model
+
+
+def create_agent(tools: list) -> Agent:
+    """Create the Strands agent with BedrockModel and MCP tools."""
+    bedrock_model = get_or_create_bedrock_model()
+    agent = Agent(model=bedrock_model, tools=tools)
+
+    logger.info("=" * 80)
+    logger.info("AGENT INITIALIZED (per-invocation MCP context)")
+    logger.info(f"MCP Tools: {len(tools)}")
+    for i, tool in enumerate(tools, 1):
+        tool_name = getattr(tool, 'name', 'unknown')
+        logger.info(f"  - {tool_name}")
+    logger.info("=" * 80)
+
+    return agent
 
 
 def log_metrics():
@@ -425,30 +410,35 @@ def agent_handler(payload: dict) -> dict:
                 "response": ["Error: No prompt provided"]
             }
         
-        # Get or create agent (with timing)
+        # Get tools and create agent within MCP context (per invocation)
+        agent_init_time = 0.0
+        agent_call_time = 0.0
+        response = None
+        messages_before: list = []
+        tools_used_list: list[str] = []
+
         agent_init_start = time.time()
-        agent = get_or_create_agent()
-        agent_init_time = time.time() - agent_init_start
-        logger.info(f"Agent initialization time: {agent_init_time:.3f}s")
-        
-        # Track messages before agent call to detect tool usage
-        messages_before = []
-        tools_used_list = []
-        try:
-            # Try to access agent messages if available
-            if hasattr(agent, 'messages'):
-                messages_before = list(agent.messages) if agent.messages else []
-                logger.debug(f"Messages before agent call: {len(messages_before)}")
-        except Exception as e:
-            logger.debug(f"Could not access messages before: {e}")
-        
-        # Use agent to process the input
-        # The agent will automatically use tools when needed
-        agent_call_start = time.time()
-        logger.info("Calling agent with user input...")
-        response = agent(user_input)
-        agent_call_time = time.time() - agent_call_start
-        logger.info(f"Agent call completed in {agent_call_time:.3f}s")
+        with initialize_mcp_tools() as tools:
+            agent = create_agent(tools)
+            agent_init_time = time.time() - agent_init_start
+            logger.info(f"Agent initialization time: {agent_init_time:.3f}s")
+
+            # Track messages before agent call to detect tool usage
+            try:
+                # Try to access agent messages if available
+                if hasattr(agent, 'messages'):
+                    messages_before = list(agent.messages) if agent.messages else []
+                    logger.debug(f"Messages before agent call: {len(messages_before)}")
+            except Exception as e:
+                logger.debug(f"Could not access messages before: {e}")
+
+            # Use agent to process the input
+            # The agent will automatically use tools when needed
+            agent_call_start = time.time()
+            logger.info("Calling agent with user input...")
+            response = agent(user_input)
+            agent_call_time = time.time() - agent_call_start
+            logger.info(f"Agent call completed in {agent_call_time:.3f}s")
         
         # Extract response text
         if isinstance(response, str):
