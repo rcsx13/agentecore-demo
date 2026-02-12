@@ -8,12 +8,14 @@ export async function POST(request: Request) {
 
   const sessionId = request.headers.get(SESSION_HEADER) ?? "";
   const contentType = request.headers.get("content-type") ?? "application/json";
+  const authorization = request.headers.get("Authorization");
 
   const response = await fetch(targetUrl, {
     method: "POST",
     headers: {
       "Content-Type": contentType,
       ...(sessionId ? { [SESSION_HEADER]: sessionId } : {}),
+      ...(authorization ? { Authorization: authorization } : {}),
     },
     body: await request.text(),
   });

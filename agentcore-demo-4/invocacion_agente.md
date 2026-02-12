@@ -23,9 +23,8 @@ Desde `agentcore-demo-4`:
 docker run -d --rm -p 9001:8080 -p 8000:8000 \
   -e AGENTCORE_GATEWAY_URL="https://countries-gateway-fdvmwzb8ln.gateway.bedrock-agentcore.us-east-1.amazonaws.com/mcp" \
   -e AWS_REGION="us-east-1" -e AWS_PROFILE=default \
-  -e OTEL_TRACES_EXPORTER=none \
-  -e OTEL_LOGS_EXPORTER=none \
-  -e OTEL_METRICS_EXPORTER=none \
+  -e OTEL_TRACES_EXPORTER=none -e OTEL_LOGS_EXPORTER=none -e OTEL_METRICS_EXPORTER=none \
+  -e JWT_LOCAL_VALIDATION=true \
   -v ~/.aws:/home/bedrock_agentcore/.aws:ro \
   -v "$PWD/.cognito-token.json:/app/.cognito-token.json:ro" \
   -v "$PWD/.cognito-info.json:/app/.cognito-info.json:ro" \
@@ -33,18 +32,26 @@ docker run -d --rm -p 9001:8080 -p 8000:8000 \
   agentcore-demo-4
 ```
 
+**JWT_LOCAL_VALIDATION**: si es `true`, el runtime exige `Authorization: Bearer <token>` en cada request. Sin token devuelve 401. Omitir o `false` para modo sin validación JWT (desarrollo).
+
 ### Probar con `invoke_local_stream.py`
 
-Modo interactivo (misma sesion):
+Con token (requerido si `JWT_LOCAL_VALIDATION=true`):
 
 ```bash
-.venv/bin/python invoke_local_stream.py
+# Token desde archivo
+export TOKEN=$(jq -r '.access_token' .cognito-token.json)
+.venv/bin/python invoke_local_stream.py --token "$TOKEN" "Hola"
+
+# O variable de entorno
+BEARER_TOKEN=$(jq -r '.access_token' .cognito-token.json) .venv/bin/python invoke_local_stream.py "Hola"
 ```
 
-Una sola solicitud:
+Modo interactivo:
 
 ```bash
-.venv/bin/python invoke_local_stream.py "Hola"
+export TOKEN=$(jq -r '.access_token' .cognito-token.json)
+.venv/bin/python invoke_local_stream.py --token "$TOKEN"
 ```
 
 ### Logs en vivo del contenedor
@@ -57,7 +64,15 @@ docker logs -f <CONTAINER_ID>
 Ejemplo con `curl`:
 
 ```bash
+# Sin JWT (JWT_LOCAL_VALIDATION=false u omitido)
 curl -X POST http://localhost:9001/invocations \
+  -H "Content-Type: application/json" \
+  -d '{"prompt":"Hola"}'
+
+# Con JWT (JWT_LOCAL_VALIDATION=true)
+export TOKEN=$(jq -r '.access_token' .cognito-token.json)
+curl -X POST http://localhost:9001/invocations \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"prompt":"Hola"}'
 ```

@@ -17,7 +17,24 @@ Ejemplo con `.env.local`:
 
 ```bash
 AGENTCORE_URL=http://localhost:9001/invocations
+
+# Login con Cognito (usuario/contraseña)
+COGNITO_CLIENT_ID=<client_id de .cognito-info.json>
+COGNITO_CLIENT_SECRET=<client_secret de .cognito-info.json>
+COGNITO_DOMAIN=<cognitoDomain de .cognito-info.json, ej: us-east-1-xxx.auth.us-east-1.amazoncognito.com>
 ```
+
+**Cognito**: El cliente debe tener `ALLOW_USER_PASSWORD_AUTH` en ExplicitAuthFlows.
+Para habilitarlo:
+
+```bash
+aws cognito-idp update-user-pool-client \
+  --user-pool-id <USER_POOL_ID> \
+  --client-id <CLIENT_ID> \
+  --explicit-auth-flows ALLOW_USER_PASSWORD_AUTH ALLOW_REFRESH_TOKEN_AUTH
+```
+
+Necesitas un usuario creado en el User Pool (p. ej. con `admin-create-user`).
 
 ## Ejecutar en desarrollo
 

@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+"""
+Invoca el agente local (Docker) con o sin token JWT.
+
+Cuando JWT_LOCAL_VALIDATION=true en el runtime, debes pasar el token:
+  --token <TOKEN>     Token JWT en la línea de comandos
+  BEARER_TOKEN=<...>  Variable de entorno con el token
+"""
+import os
 import sys
 import uuid
 from typing import Iterable, List, Optional, Tuple
@@ -26,23 +34,35 @@ def extract_sse_data(lines: Iterable[str]) -> List[str]:
     return chunks
 
 
-def parse_args(argv: List[str]) -> Tuple[Optional[str], str]:
-    """Parse optional --session and a prompt string."""
+def parse_args(
+    argv: List[str],
+) -> Tuple[Optional[str], Optional[str], str]:
+    """Parse --token, --session and a prompt string."""
     session_id = None
+    token: Optional[str] = os.environ.get("BEARER_TOKEN")
     prompt_parts: List[str] = []
     it = iter(argv)
     for item in it:
         if item == "--session":
             session_id = next(it, None)
+        elif item == "--token":
+            token = next(it, None)
         else:
             prompt_parts.append(item)
     prompt = " ".join(prompt_parts).strip() if prompt_parts else ""
-    return prompt or None, session_id or str(uuid.uuid4())
+    return prompt or None, token, session_id or str(uuid.uuid4())
 
 
-def invoke(prompt: str, session_id: str, url: str) -> None:
+def invoke(
+    prompt: str,
+    session_id: str,
+    url: str,
+    token: Optional[str] = None,
+) -> None:
     payload = {"prompt": prompt}
     headers = {SESSION_HEADER: session_id}
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
 
     with requests.post(url, json=payload, headers=headers, stream=True, timeout=300) as response:
         response.raise_for_status()
@@ -68,14 +88,16 @@ def invoke(prompt: str, session_id: str, url: str) -> None:
             print(data)
 
 def main() -> int:
-    prompt, session_id = parse_args(sys.argv[1:])
+    prompt, token, session_id = parse_args(sys.argv[1:])
     url = "http://localhost:9001/invocations"
 
     if prompt:
-        invoke(prompt, session_id, url)
+        invoke(prompt, session_id, url, token=token)
         return 0
 
     print(f"Sesión: {session_id}")
+    if token:
+        print("Token: enviando en Authorization header")
     print("Modo interactivo. Escribe 'exit' para salir.\n")
     while True:
         user_input = input("> ").strip()
@@ -83,7 +105,7 @@ def main() -> int:
             continue
         if user_input.lower() in {"exit", "quit"}:
             break
-        invoke(user_input, session_id, url)
+        invoke(user_input, session_id, url, token=token)
         print()
 
     return 0

@@ -3,7 +3,9 @@
 import { FormEvent, useEffect, useState } from "react";
 
 const DEFAULT_ENDPOINT = "/api/invoke";
+const LOGIN_ENDPOINT = "/api/auth/login";
 const SESSION_STORAGE_KEY = "agentcore-session-id";
+const TOKEN_STORAGE_KEY = "agentcore-token";
 const THEME_STORAGE_KEY = "agentcore-ui-theme";
 const SESSION_HEADER = "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id";
 
@@ -66,12 +68,15 @@ const readSseStream = async (
 
 export default function Home() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [token, setToken] = useState<string | null>(null);
   const [prompt, setPrompt] = useState("");
   const [sessionId, setSessionId] = useState("");
   const [output, setOutput] = useState("");
   const [logs, setLogs] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -95,9 +100,64 @@ export default function Home() {
   }, [theme]);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = sessionStorage.getItem(TOKEN_STORAGE_KEY);
+    if (saved) setToken(saved);
+  }, []);
+
+  useEffect(() => {
+    if (token && typeof window !== "undefined") {
+      sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+    } else if (!token && typeof window !== "undefined") {
+      sessionStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+  }, [token]);
+
+  useEffect(() => {
     const initialSessionId = createSessionId();
     setSessionId(initialSessionId);
   }, []);
+
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const username = (form.elements.namedItem("username") as HTMLInputElement)
+      ?.value?.trim();
+    const password = (form.elements.namedItem("password") as HTMLInputElement)
+      ?.value;
+    if (!username || !password) {
+      setLoginError("Usuario y contraseña son obligatorios");
+      return;
+    }
+    setIsLoggingIn(true);
+    setLoginError(null);
+    try {
+      const res = await fetch(LOGIN_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setLoginError(data.detail ?? data.error ?? "Error al iniciar sesión");
+        return;
+      }
+      setToken(data.access_token);
+    } catch (err) {
+      setLoginError(
+        err instanceof Error ? err.message : "Error de conexión",
+      );
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+    setOutput("");
+    setLogs([]);
+    setError(null);
+  };
 
   useEffect(() => {
     persistSessionId(sessionId);
@@ -149,12 +209,15 @@ export default function Home() {
       appendLog(`request.start POST ${DEFAULT_ENDPOINT}`);
       appendLog(`request.session=${activeSessionId}`);
       appendLog(`request.prompt_chars=${prompt.trim().length}`);
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        [SESSION_HEADER]: activeSessionId,
+      };
+      if (token) headers["Authorization"] = `Bearer ${token}`;
+
       const response = await fetch(DEFAULT_ENDPOINT, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          [SESSION_HEADER]: activeSessionId,
-        },
+        headers,
         body: JSON.stringify({ prompt: prompt.trim() }),
       });
 
@@ -216,6 +279,86 @@ export default function Home() {
     }
   };
 
+  if (!token) {
+    return (
+      <div
+        className={`min-h-screen px-6 py-12 flex items-center justify-center ${
+          theme === "dark"
+            ? "bg-slate-950 text-slate-100"
+            : "bg-slate-50 text-slate-900"
+        }`}
+      >
+        <div
+          className={`w-full max-w-sm rounded-2xl border p-8 shadow-lg ${
+            theme === "dark"
+              ? "border-slate-800 bg-slate-900/60"
+              : "border-slate-200 bg-white"
+          }`}
+        >
+          <h1 className="text-xl font-semibold mb-6">Iniciar sesión</h1>
+          <form onSubmit={handleLogin} className="flex flex-col gap-4">
+            <div>
+              <label
+                className={`block text-sm font-medium mb-1 ${
+                  theme === "dark" ? "text-slate-200" : "text-slate-800"
+                }`}
+              >
+                Usuario
+              </label>
+              <input
+                name="username"
+                type="text"
+                autoComplete="username"
+                required
+                className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-slate-500 ${
+                  theme === "dark"
+                    ? "border-slate-700 bg-slate-950 text-slate-100"
+                    : "border-slate-200 bg-slate-50 text-slate-900"
+                }`}
+                placeholder="Usuario"
+              />
+            </div>
+            <div>
+              <label
+                className={`block text-sm font-medium mb-1 ${
+                  theme === "dark" ? "text-slate-200" : "text-slate-800"
+                }`}
+              >
+                Contraseña
+              </label>
+              <input
+                name="password"
+                type="password"
+                autoComplete="current-password"
+                required
+                className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:border-slate-500 ${
+                  theme === "dark"
+                    ? "border-slate-700 bg-slate-950 text-slate-100"
+                    : "border-slate-200 bg-slate-50 text-slate-900"
+                }`}
+                placeholder="Contraseña"
+              />
+            </div>
+            {loginError && (
+              <p className="text-sm text-rose-500">{loginError}</p>
+            )}
+            <button
+              type="submit"
+              disabled={isLoggingIn}
+              className={`inline-flex justify-center rounded-full px-5 py-2 text-sm font-semibold text-white transition disabled:opacity-50 ${
+                theme === "dark"
+                  ? "bg-indigo-500 hover:bg-indigo-400"
+                  : "bg-indigo-600 hover:bg-indigo-500"
+              }`}
+            >
+              {isLoggingIn ? "Entrando..." : "Entrar"}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`min-h-screen px-6 py-12 ${
@@ -245,19 +388,32 @@ export default function Home() {
               Envía prompts al runtime Docker y recibe respuesta en streaming.
             </p>
           </div>
-          <button
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className={`inline-flex items-center rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
+                theme === "dark"
+                  ? "border-slate-700 text-slate-200 hover:border-slate-500"
+                  : "border-slate-200 text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              Salir
+            </button>
+            <button
             type="button"
-            onClick={() =>
-              setTheme((current) => (current === "dark" ? "light" : "dark"))
-            }
-            className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
-              theme === "dark"
-                ? "border-slate-700 text-slate-200 hover:border-slate-500"
-                : "border-slate-200 text-slate-700 hover:border-slate-300"
-            }`}
-          >
-            {theme === "dark" ? "Modo claro" : "Modo oscuro"}
-          </button>
+              onClick={() =>
+                setTheme((current) => (current === "dark" ? "light" : "dark"))
+              }
+              className={`inline-flex items-center justify-center rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-wide transition ${
+                theme === "dark"
+                  ? "border-slate-700 text-slate-200 hover:border-slate-500"
+                  : "border-slate-200 text-slate-700 hover:border-slate-300"
+              }`}
+            >
+              {theme === "dark" ? "Modo claro" : "Modo oscuro"}
+            </button>
+          </div>
         </header>
 
         <section
