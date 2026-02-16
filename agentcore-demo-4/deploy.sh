@@ -61,7 +61,26 @@ echo ""
 
 # Configure
 echo "Configurando despliegue para el agente: $AGENT_NAME"
-agentcore configure -e agent_runtime.py --name $AGENT_NAME
+
+# Incluir authorizer JWT (Cognito) si .cognito-info.json existe
+AUTHORIZER_JSON=""
+if [ -f ".cognito-info.json" ]; then
+    DISCOVERY_URL=$(jq -r '.discoveryUrl' .cognito-info.json 2>/dev/null)
+    CLIENT_ID=$(jq -r '.clientId' .cognito-info.json 2>/dev/null)
+    if [ -n "$DISCOVERY_URL" ] && [ "$DISCOVERY_URL" != "null" ] && [ -n "$CLIENT_ID" ] && [ "$CLIENT_ID" != "null" ]; then
+        AUTHORIZER_JSON=$(jq -c -n \
+            --arg discovery "$DISCOVERY_URL" \
+            --arg client "$CLIENT_ID" \
+            '{customJWTAuthorizer: {discoveryUrl: $discovery, allowedClients: [$client]}}')
+        echo "✓ Cognito JWT authorizer: discoveryUrl + clientId desde .cognito-info.json"
+    fi
+fi
+
+if [ -n "$AUTHORIZER_JSON" ]; then
+    agentcore configure -e agent_runtime.py --name $AGENT_NAME --authorizer-config "$AUTHORIZER_JSON" --request-header-allowlist "Authorization"
+else
+    agentcore configure -e agent_runtime.py --name $AGENT_NAME
+fi
 
 # Launch
 echo ""
@@ -80,4 +99,11 @@ echo "  agentcore status --agent $AGENT_NAME"
 echo ""
 echo "Para ver logs:"
 echo "  aws logs tail /aws/bedrock-agentcore/runtime --follow --region ${AWS_REGION:-us-east-1}"
+echo ""
+if [ -n "$AUTHORIZER_JSON" ]; then
+    echo "Invocar con JWT (Cognito):"
+    echo "  export TOKEN=\$(jq -r '.access_token' .cognito-token.json)"
+    echo "  agentcore invoke '{\"prompt\":\"Hola\"}' --bearer-token \$TOKEN"
+    echo ""
+fi
 

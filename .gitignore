@@ -42,8 +42,6 @@ Thumbs.db
 *.log
 
 # AWS/Bedrock AgentCore
-.bedrock_agentcore/
-.bedrock_agentcore.yaml
 *.pem
 *.key
 

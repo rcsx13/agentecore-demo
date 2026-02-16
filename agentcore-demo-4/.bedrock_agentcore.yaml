@@ -1,0 +1,248 @@
+default_agent: agent_runtime_demo_4
+agents:
+  agent_runtime_demo_1:
+    name: agent_runtime_demo_1
+    language: python
+    node_version: null
+    entrypoint: /Users/raulcabrera/Documents/sources/agentcore-demo-1/agent_runtime.py
+    deployment_type: container
+    runtime_type: null
+    platform: linux/arm64
+    container_runtime: none
+    source_path: /Users/raulcabrera/Documents/sources/agentcore-demo-1
+    aws:
+      execution_role: arn:aws:iam::785697333220:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-a3dcd2f108
+      execution_role_auto_create: false
+      account: '785697333220'
+      region: us-east-1
+      ecr_repository: 785697333220.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-agent_runtime_demo_1
+      ecr_auto_create: false
+      s3_path: null
+      s3_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
+    bedrock_agentcore:
+      agent_id: agent_runtime_demo_1-okFqvt6jdK
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:785697333220:runtime/agent_runtime_demo_1-okFqvt6jdK
+      agent_session_id: e7b92855-ae8d-4045-a882-15b930b933f0
+    codebuild:
+      project_name: bedrock-agentcore-agent_runtime_demo_1-builder
+      execution_role: arn:aws:iam::785697333220:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-a3dcd2f108
+      source_bucket: bedrock-agentcore-codebuild-sources-785697333220-us-east-1
+    memory:
+      mode: NO_MEMORY
+      memory_id: null
+      memory_arn: null
+      memory_name: null
+      event_expiry_days: 30
+      first_invoke_memory_check_done: false
+      was_created_by_toolkit: false
+    identity:
+      credential_providers: []
+      workload: null
+    aws_jwt:
+      enabled: false
+      audiences: []
+      signing_algorithm: ES384
+      issuer_url: null
+      duration_seconds: 300
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null
+    api_key_env_var_name: null
+    api_key_credential_provider_name: null
+    is_generated_by_agentcore_create: false
+  agent_runtime_demo_2:
+    name: agent_runtime_demo_2
+    language: python
+    node_version: null
+    entrypoint: /Users/raulcabrera/Documents/sources/agentcore-demo/agentcore-demo-2/agent_runtime.py
+    deployment_type: container
+    runtime_type: null
+    platform: linux/arm64
+    container_runtime: none
+    source_path: /Users/raulcabrera/Documents/sources/agentcore-demo/agentcore-demo-2
+    aws:
+      execution_role: arn:aws:iam::785697333220:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-4c612122ac
+      execution_role_auto_create: false
+      account: '785697333220'
+      region: us-east-1
+      ecr_repository: 785697333220.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-agent_runtime_demo_2
+      ecr_auto_create: false
+      s3_path: null
+      s3_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
+    bedrock_agentcore:
+      agent_id: agent_runtime_demo_2-xkF5d1FxFU
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:785697333220:runtime/agent_runtime_demo_2-xkF5d1FxFU
+      agent_session_id: 6c0d099a-04dc-4a0b-92e0-3310b7f9ad07
+    codebuild:
+      project_name: bedrock-agentcore-agent_runtime_demo_2-builder
+      execution_role: arn:aws:iam::785697333220:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-4c612122ac
+      source_bucket: bedrock-agentcore-codebuild-sources-785697333220-us-east-1
+    memory:
+      mode: STM_ONLY
+      memory_id: agent_runtime_demo_2_mem-L94pauCTDq
+      memory_arn: arn:aws:bedrock-agentcore:us-east-1:785697333220:memory/agent_runtime_demo_2_mem-L94pauCTDq
+      memory_name: agent_runtime_demo_2_mem
+      event_expiry_days: 30
+      first_invoke_memory_check_done: true
+      was_created_by_toolkit: true
+    identity:
+      credential_providers: []
+      workload: null
+    aws_jwt:
+      enabled: false
+      audiences: []
+      signing_algorithm: ES384
+      issuer_url: null
+      duration_seconds: 300
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null
+    api_key_env_var_name: null
+    api_key_credential_provider_name: null
+    is_generated_by_agentcore_create: false
+  agent_runtime_demo_3:
+    name: agent_runtime_demo_3
+    language: python
+    node_version: null
+    entrypoint: /Users/raulcabrera/Documents/sources/agentcore-demo/agentcore-demo-3/agent_runtime.py
+    deployment_type: container
+    runtime_type: null
+    platform: linux/arm64
+    container_runtime: none
+    source_path: /Users/raulcabrera/Documents/sources/agentcore-demo/agentcore-demo-3
+    aws:
+      execution_role: arn:aws:iam::785697333220:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-4499cbdbcc
+      execution_role_auto_create: false
+      account: '785697333220'
+      region: us-east-1
+      ecr_repository: 785697333220.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-agent_runtime_demo_3
+      ecr_auto_create: false
+      s3_path: null
+      s3_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
+    bedrock_agentcore:
+      agent_id: agent_runtime_demo_3-3xwWwgH0Ws
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:785697333220:runtime/agent_runtime_demo_3-3xwWwgH0Ws
+      agent_session_id: 1e019d54-d77a-4fbf-b704-bcad2145499c
+    codebuild:
+      project_name: bedrock-agentcore-agent_runtime_demo_3-builder
+      execution_role: arn:aws:iam::785697333220:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-4499cbdbcc
+      source_bucket: bedrock-agentcore-codebuild-sources-785697333220-us-east-1
+    memory:
+      mode: STM_ONLY
+      memory_id: agent_runtime_demo_3_mem-PI3CqaB8v9
+      memory_arn: arn:aws:bedrock-agentcore:us-east-1:785697333220:memory/agent_runtime_demo_3_mem-PI3CqaB8v9
+      memory_name: agent_runtime_demo_3_mem
+      event_expiry_days: 30
+      first_invoke_memory_check_done: true
+      was_created_by_toolkit: true
+    identity:
+      credential_providers: []
+      workload: null
+    aws_jwt:
+      enabled: false
+      audiences: []
+      signing_algorithm: ES384
+      issuer_url: null
+      duration_seconds: 300
+    authorizer_configuration: null
+    request_header_configuration: null
+    oauth_configuration: null
+    api_key_env_var_name: null
+    api_key_credential_provider_name: null
+    is_generated_by_agentcore_create: false
+  agent_runtime_demo_4:
+    name: agent_runtime_demo_4
+    language: python
+    node_version: '20'
+    entrypoint: /Users/raulcabrera/Documents/sources/agentcore-demo/agentcore-demo-4/agent_runtime.py
+    deployment_type: container
+    runtime_type: null
+    platform: linux/arm64
+    container_runtime: none
+    source_path: /Users/raulcabrera/Documents/sources/agentcore-demo/agentcore-demo-4
+    aws:
+      execution_role: arn:aws:iam::785697333220:role/AmazonBedrockAgentCoreSDKRuntime-us-east-1-9cf7d4dd0b
+      execution_role_auto_create: false
+      account: '785697333220'
+      region: us-east-1
+      ecr_repository: 785697333220.dkr.ecr.us-east-1.amazonaws.com/bedrock-agentcore-agent_runtime_demo_4
+      ecr_auto_create: false
+      s3_path: null
+      s3_auto_create: false
+      network_configuration:
+        network_mode: PUBLIC
+        network_mode_config: null
+      protocol_configuration:
+        server_protocol: HTTP
+      observability:
+        enabled: true
+      lifecycle_configuration:
+        idle_runtime_session_timeout: null
+        max_lifetime: null
+    bedrock_agentcore:
+      agent_id: agent_runtime_demo_4-hZVf5V3hBw
+      agent_arn: arn:aws:bedrock-agentcore:us-east-1:785697333220:runtime/agent_runtime_demo_4-hZVf5V3hBw
+      agent_session_id: 6adac5b5-4ae5-4acc-a85c-9b0925f84999
+    codebuild:
+      project_name: bedrock-agentcore-agent_runtime_demo_4-builder
+      execution_role: arn:aws:iam::785697333220:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-9cf7d4dd0b
+      source_bucket: bedrock-agentcore-codebuild-sources-785697333220-us-east-1
+    memory:
+      mode: NO_MEMORY
+      memory_id: null
+      memory_arn: null
+      memory_name: null
+      event_expiry_days: 30
+      first_invoke_memory_check_done: false
+      was_created_by_toolkit: false
+    identity:
+      credential_providers: []
+      workload: null
+    aws_jwt:
+      enabled: false
+      audiences: []
+      signing_algorithm: ES384
+      issuer_url: null
+      duration_seconds: 300
+    authorizer_configuration:
+      customJWTAuthorizer:
+        discoveryUrl: https://cognito-idp.us-east-1.amazonaws.com/us-east-1_Dklrwiv8d/.well-known/openid-configuration
+        allowedClients:
+        - 5sbkks0505507jlg917ifl8gsp
+    request_header_configuration:
+      requestHeaderAllowlist:
+        - Authorization
+    oauth_configuration: null
+    api_key_env_var_name: null
+    api_key_credential_provider_name: null
+    is_generated_by_agentcore_create: false
