@@ -16,9 +16,9 @@ import logging
 import os
 import sys
 
-from bedrock_agentcore.runtime import BedrockAgentCoreApp
+from bedrock_agentcore import BedrockAgentCoreApp, RequestContext
 
-from runtime_auth import setup_local_auth_middleware
+from runtime_auth import inbound_token, setup_local_auth_middleware
 from runtime_handler import agent_handler_impl
 
 # Configure structured logging
@@ -40,9 +40,16 @@ app = BedrockAgentCoreApp(middleware=_middleware)
 
 
 @app.entrypoint
-def agent_handler(payload: dict) -> dict:
+def agent_handler(payload: dict, context: RequestContext | None = None) -> dict:
     """Entry point registrado en el runtime."""
-    return agent_handler_impl(payload)
+    if context and context.request_headers:
+        auth = context.request_headers.get("Authorization")
+        if auth and auth.startswith("Bearer "):
+            inbound_token.set(auth[7:].strip())
+    try:
+        return agent_handler_impl(payload)
+    finally:
+        inbound_token.set(None)
 
 
 def log_startup_info() -> None:

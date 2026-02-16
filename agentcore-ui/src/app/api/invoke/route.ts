@@ -10,6 +10,10 @@ export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") ?? "application/json";
   const authorization = request.headers.get("Authorization");
 
+  if (!authorization) {
+    console.warn("[invoke] Sin header Authorization - el runtime puede devolver 401");
+  }
+
   const response = await fetch(targetUrl, {
     method: "POST",
     headers: {

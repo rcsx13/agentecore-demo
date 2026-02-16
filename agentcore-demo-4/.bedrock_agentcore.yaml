@@ -2,8 +2,6 @@ default_agent: agent_runtime_demo_4
 agents:
   agent_runtime_demo_1:
     name: agent_runtime_demo_1
-    language: python
-    node_version: null
     entrypoint: /Users/raulcabrera/Documents/sources/agentcore-demo-1/agent_runtime.py
     deployment_type: container
     runtime_type: null
@@ -62,8 +60,6 @@ agents:
     is_generated_by_agentcore_create: false
   agent_runtime_demo_2:
     name: agent_runtime_demo_2
-    language: python
-    node_version: null
     entrypoint: /Users/raulcabrera/Documents/sources/agentcore-demo/agentcore-demo-2/agent_runtime.py
     deployment_type: container
     runtime_type: null
@@ -122,8 +118,6 @@ agents:
     is_generated_by_agentcore_create: false
   agent_runtime_demo_3:
     name: agent_runtime_demo_3
-    language: python
-    node_version: null
     entrypoint: /Users/raulcabrera/Documents/sources/agentcore-demo/agentcore-demo-3/agent_runtime.py
     deployment_type: container
     runtime_type: null
@@ -182,8 +176,6 @@ agents:
     is_generated_by_agentcore_create: false
   agent_runtime_demo_4:
     name: agent_runtime_demo_4
-    language: python
-    node_version: '20'
     entrypoint: /Users/raulcabrera/Documents/sources/agentcore-demo/agentcore-demo-4/agent_runtime.py
     deployment_type: container
     runtime_type: null
@@ -212,7 +204,7 @@ agents:
     bedrock_agentcore:
       agent_id: agent_runtime_demo_4-hZVf5V3hBw
       agent_arn: arn:aws:bedrock-agentcore:us-east-1:785697333220:runtime/agent_runtime_demo_4-hZVf5V3hBw
-      agent_session_id: 033b985c-9f8d-447d-8ac5-abd60e65cf1d
+      agent_session_id: 88c0b557-9bca-4bdb-adcf-314320c9ef08
     codebuild:
       project_name: bedrock-agentcore-agent_runtime_demo_4-builder
       execution_role: arn:aws:iam::785697333220:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-9cf7d4dd0b

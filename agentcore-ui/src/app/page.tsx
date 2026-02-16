@@ -106,9 +106,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (token && typeof window !== "undefined") {
+    if (typeof window === "undefined") return;
+    if (token) {
       sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
-    } else if (!token && typeof window !== "undefined") {
+    } else {
       sessionStorage.removeItem(TOKEN_STORAGE_KEY);
     }
   }, [token]);
@@ -131,6 +132,12 @@ export default function Home() {
     }
     setIsLoggingIn(true);
     setLoginError(null);
+    const loginBody = JSON.stringify({ username, password: "***" });
+    const baseUrl =
+      typeof window !== "undefined" ? window.location.origin : "";
+    const loginCurl = `curl -X POST "${baseUrl}${LOGIN_ENDPOINT}" \\
+  -H "Content-Type: application/json" \\
+  -d "${loginBody.replace(/\\/g, "\\\\").replace(/"/g, '\\"')}"`;
     try {
       const res = await fetch(LOGIN_ENDPOINT, {
         method: "POST",
@@ -143,6 +150,10 @@ export default function Home() {
         return;
       }
       setToken(data.access_token);
+      setLogs((prev) => [
+        ...prev,
+        formatLog(`auth.login.curl (contraseña en ***):\n${loginCurl}`),
+      ]);
     } catch (err) {
       setLoginError(
         err instanceof Error ? err.message : "Error de conexión",
@@ -168,6 +179,25 @@ export default function Home() {
 
   const appendLog = (message: string) => {
     setLogs((previous) => [...previous, formatLog(message)]);
+  };
+
+  const buildCurlInvoke = (
+    baseUrl: string,
+    sessionId: string,
+    bearerToken: string | null,
+    body: string,
+  ): string => {
+    let curl = `curl -X POST "${baseUrl}${DEFAULT_ENDPOINT}" \\
+  -H "Content-Type: application/json" \\
+  -H "${SESSION_HEADER}: ${sessionId}"`;
+    if (bearerToken) {
+      curl += ` \\
+  -H "Authorization: Bearer ${bearerToken}"`;
+    }
+    const escapedForShell = body.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    curl += ` \\
+  -d "${escapedForShell}"`;
+    return curl;
   };
 
   const resetSession = () => {
@@ -206,9 +236,19 @@ export default function Home() {
 
     try {
       const activeSessionId = ensureSessionId();
+      const bodyJson = JSON.stringify({ prompt: prompt.trim() });
+      const baseUrl =
+        typeof window !== "undefined" ? window.location.origin : "";
       appendLog(`request.start POST ${DEFAULT_ENDPOINT}`);
       appendLog(`request.session=${activeSessionId}`);
       appendLog(`request.prompt_chars=${prompt.trim().length}`);
+      const curlCmd = buildCurlInvoke(
+        baseUrl,
+        activeSessionId,
+        token,
+        bodyJson,
+      );
+      appendLog(`request.curl:\n${curlCmd}`);
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         [SESSION_HEADER]: activeSessionId,
@@ -218,7 +258,7 @@ export default function Home() {
       const response = await fetch(DEFAULT_ENDPOINT, {
         method: "POST",
         headers,
-        body: JSON.stringify({ prompt: prompt.trim() }),
+        body: bodyJson,
       });
 
       if (!response.ok) {
@@ -570,7 +610,7 @@ export default function Home() {
             </button>
           </div>
           <pre
-            className={`mt-4 min-h-[160px] whitespace-pre-wrap rounded-lg px-4 py-3 text-xs ${
+            className={`mt-4 min-h-[160px] max-h-[400px] overflow-auto whitespace-pre-wrap break-all rounded-lg px-4 py-3 text-xs ${
               theme === "dark"
                 ? "bg-slate-950 text-slate-300"
                 : "bg-slate-100 text-slate-700"

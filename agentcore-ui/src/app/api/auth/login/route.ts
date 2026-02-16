@@ -1,27 +1,47 @@
 /**
- * Login API: intercambia usuario/contraseña por un JWT de Cognito.
+ * Login API: autentica usuario/contraseña vía Cognito InitiateAuth
+ * y devuelve los JWT para usar con el AgentCore Runtime.
+ *
+ * Cognito NO soporta grant_type=password en el token endpoint.
+ * Usamos InitiateAuth con USER_PASSWORD_AUTH.
  *
  * Requiere variables de entorno:
  *   COGNITO_CLIENT_ID
- *   COGNITO_CLIENT_SECRET
- *   COGNITO_DOMAIN (ej: us-east-1-xxx.auth.us-east-1.amazoncognito.com)
+ *   COGNITO_CLIENT_SECRET (opcional si el client es público)
+ *   COGNITO_REGION (ej: us-east-1)
  *
  * El cliente de Cognito debe tener ALLOW_USER_PASSWORD_AUTH en ExplicitAuthFlows.
  */
 
 export const runtime = "nodejs";
 
+import {
+  CognitoIdentityProviderClient,
+  InitiateAuthCommand,
+  AuthFlowType,
+} from "@aws-sdk/client-cognito-identity-provider";
+import { createHmac } from "crypto";
+
+function computeSecretHash(
+  username: string,
+  clientId: string,
+  clientSecret: string,
+): string {
+  return createHmac("sha256", clientSecret)
+    .update(username + clientId)
+    .digest("base64");
+}
+
 export async function POST(request: Request) {
   const clientId = process.env.COGNITO_CLIENT_ID;
   const clientSecret = process.env.COGNITO_CLIENT_SECRET;
-  const cognitoDomain = process.env.COGNITO_DOMAIN;
+  const region = process.env.COGNITO_REGION ?? process.env.AWS_REGION ?? "us-east-1";
 
-  if (!clientId || !clientSecret || !cognitoDomain) {
+  if (!clientId) {
     return Response.json(
       {
         error: "Server misconfigured",
-        detail:
-          "Missing COGNITO_CLIENT_ID, COGNITO_CLIENT_SECRET, or COGNITO_DOMAIN",
+        detail: "Missing COGNITO_CLIENT_ID",
       },
       { status: 500 },
     );
@@ -31,10 +51,7 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return Response.json(
-      { error: "Invalid JSON body" },
-      { status: 400 },
-    );
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   const username = body.username?.trim();
@@ -47,40 +64,82 @@ export async function POST(request: Request) {
     );
   }
 
-  const tokenUrl = `https://${cognitoDomain}/oauth2/token`;
-  const auth = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+  const authParams: Record<string, string> = {
+    USERNAME: username,
+    PASSWORD: password,
+  };
 
-  const params = new URLSearchParams({
-    grant_type: "password",
-    username,
-    password,
-    client_id: clientId,
-  });
-
-  const response = await fetch(tokenUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${auth}`,
-    },
-    body: params.toString(),
-  });
-
-  const data = await response.json();
-
-  if (!response.ok) {
-    return Response.json(
-      {
-        error: data.error ?? "Authentication failed",
-        detail: data.error_description ?? undefined,
-      },
-      { status: response.status },
-    );
+  if (clientSecret) {
+    authParams.SECRET_HASH = computeSecretHash(username, clientId, clientSecret);
   }
 
-  return Response.json({
-    access_token: data.access_token,
-    expires_in: data.expires_in,
-    token_type: data.token_type ?? "Bearer",
-  });
+  try {
+    const client = new CognitoIdentityProviderClient({ region });
+    const command = new InitiateAuthCommand({
+      AuthFlow: AuthFlowType.USER_PASSWORD_AUTH,
+      ClientId: clientId,
+      AuthParameters: authParams,
+    });
+
+    const response = await client.send(command);
+
+    if (!response.AuthenticationResult) {
+      return Response.json(
+        {
+          error: "Authentication failed",
+          detail: response.ChallengeName ?? "No tokens returned",
+        },
+        { status: 401 },
+      );
+    }
+
+    const { IdToken, AccessToken, ExpiresIn } = response.AuthenticationResult;
+
+    // El customJWTAuthorizer valida client_id: usar AccessToken (Cognito lo incluye).
+    // IdToken tiene aud, AccessToken tiene client_id que es lo que allowedClients verifica.
+    const token = AccessToken ?? IdToken;
+    if (!token) {
+      return Response.json(
+        { error: "No token in response" },
+        { status: 500 },
+      );
+    }
+
+    return Response.json({
+      access_token: token,
+      expires_in: ExpiresIn ?? 3600,
+      token_type: "Bearer",
+    });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : "Authentication failed";
+    const name = err instanceof Error ? err.name : "";
+
+    if (name === "NotAuthorizedException" || message.includes("NotAuthorized")) {
+      return Response.json(
+        { error: "Invalid username or password" },
+        { status: 401 },
+      );
+    }
+    if (name === "UserNotFoundException" || message.includes("UserNotFound")) {
+      return Response.json(
+        { error: "Invalid username or password" },
+        { status: 401 },
+      );
+    }
+    if (
+      name === "UserNotConfirmedException" ||
+      message.includes("UserNotConfirmed")
+    ) {
+      return Response.json(
+        { error: "User not confirmed" },
+        { status: 403 },
+      );
+    }
+
+    console.error("[auth/login]", err);
+    return Response.json(
+      { error: "Authentication failed", detail: message },
+      { status: 500 },
+    );
+  }
 }

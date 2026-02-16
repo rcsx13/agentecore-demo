@@ -16,7 +16,7 @@ from mcp.client.streamable_http import streamablehttp_client
 from strands.tools.mcp import MCPClient
 
 from runtime_auth import inbound_token
-from runtime_config import get_aws_session, is_local_deployment
+from runtime_config import get_aws_session
 from runtime_metrics import metrics
 
 logger = logging.getLogger(__name__)
@@ -64,12 +64,11 @@ def create_gateway_mcp_client() -> MCPClient:
                 token = None
                 token_source = "none"
 
-                # Local mode: usar token del request (mismo que inbound)
-                if is_local_deployment():
-                    req_token = inbound_token.get()
-                    if req_token:
-                        token = req_token
-                        token_source = "request (inbound)"
+                # Inbound token (request): local middleware o AWS context (Authorization header)
+                req_token = inbound_token.get()
+                if req_token:
+                    token = req_token
+                    token_source = "request (inbound)"
 
                 # Fallback: archivo o Cognito
                 token_file = ".cognito-token.json"
