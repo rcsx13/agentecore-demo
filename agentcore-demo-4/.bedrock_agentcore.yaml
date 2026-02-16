@@ -212,7 +212,7 @@ agents:
     bedrock_agentcore:
       agent_id: agent_runtime_demo_4-hZVf5V3hBw
       agent_arn: arn:aws:bedrock-agentcore:us-east-1:785697333220:runtime/agent_runtime_demo_4-hZVf5V3hBw
-      agent_session_id: 6adac5b5-4ae5-4acc-a85c-9b0925f84999
+      agent_session_id: 033b985c-9f8d-447d-8ac5-abd60e65cf1d
     codebuild:
       project_name: bedrock-agentcore-agent_runtime_demo_4-builder
       execution_role: arn:aws:iam::785697333220:role/AmazonBedrockAgentCoreSDKCodeBuild-us-east-1-9cf7d4dd0b
@@ -241,7 +241,7 @@ agents:
         - 5sbkks0505507jlg917ifl8gsp
     request_header_configuration:
       requestHeaderAllowlist:
-        - Authorization
+      - Authorization
     oauth_configuration: null
     api_key_env_var_name: null
     api_key_credential_provider_name: null
